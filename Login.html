@@ -21,8 +21,8 @@
   </main>
       <script src="App.js"></script>
 <script>
-if(usuarioInvitado())location.href='home.html';document.querySelector('form').onsubmit=e=>{e.preventDefault();
+if(usuarioInvitado())location.href='index.html';document.querySelector('form').onsubmit=e=>{e.preventDefault();
 const nombre=document.querySelector('input').value.trim();
-if(!nombre)return;localStorage.setItem('enigma_invitado',JSON.stringify({id:'invitado-local',nombre}));location.href='home.html'}</script>
+if(!nombre)return;localStorage.setItem('enigma_invitado',JSON.stringify({id:'invitado-local',nombre}));location.href='index.html'}</script>
 </body>
 </html>
