@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>ENIGMA — Perfil</title>
+    <link rel="stylesheet" href="Diseño.css" />
+  </head>
+  <body>
+    <main class="pantalla">
+      <header class="encabezado">
+        <a href="home.html">‹</a>
+        <h2>MI PERFIL</h2>
+      </header>
+      <section class="perfil-encabezado">
+        <div class="perfil-avatar"></div>
+        <div>
+          <h2 id="nombre"></h2>
+          <div class="nivel-tag">Nivel <span id="nivel"></span></div>
+          <div class="barra-xp-fondo">
+            <div class="barra-xp-relleno" id="barra"></div>
+          </div>
+          <small id="xp"></small>
+        </div>
+      </section>
+      <section class="tarjeta">
+        <div class="seccion-titulo">ESTADÍSTICAS GENERALES</div>
+        <div class="stats-fila">
+          <div class="stat-box">
+            <div class="valor" id="completados"></div>
+            <div class="etiqueta">Desafíos<br />completados</div>
+          </div>
+          <div class="stat-box">
+            <div class="valor" id="exito"></div>
+            <div class="etiqueta">% de<br />éxito</div>
+          </div>
+          <div class="stat-box">
+            <div class="valor" id="racha"></div>
+            <div class="etiqueta">Racha<br />actual</div>
+          </div>
+        </div>
+      </section>
+      <section class="tarjeta">
+        <div class="seccion-titulo">FORTALEZAS</div>
+        <div id="fortalezas"></div>
+      </section>
+      <button class="btn btn-secundario" id="salir">Cerrar sesión</button>
+    </main>
+    <script src="App.js"></script>
+    <script>
+      if (exigirUsuario()) {
+        const u = usuarioInvitado(),
+          e = leerEstado();
+        nombre.textContent = u.nombre;
+        nivel.textContent = e.nivel;
+        xp.textContent = `${e.xp} / ${e.meta} XP`;
+        barra.style.width = (e.xp / e.meta) * 100 + "%";
+        completados.textContent = e.completados;
+        exito.textContent =
+          (e.completados
+            ? Math.round((e.correctos / e.completados) * 100)
+            : 0) + "%";
+        racha.textContent = e.racha + " días";
+        fortalezas.innerHTML = HABILIDADES.map(
+          (h) =>
+            `<div class="fortaleza-fila"><div class="nombres"><span>${h.nombre}</span><span>${e.progreso[h.id] || 0}%</span></div><div class="fortaleza-barra-fondo"><div class="fortaleza-barra-relleno" style="width:${e.progreso[h.id] || 0}%;background:${h.color}"></div></div></div>`,
+        ).join("");
+        salir.onclick = async () => {
+          await cerrarSesion();
+          location.href = "Login.html";
+        };
+        document.body.insertAdjacentHTML("beforeend", navInferior("perfil"));
+      }
+    </script>
+  </body>
+</html>

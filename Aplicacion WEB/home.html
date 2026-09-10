@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>ENIGMA — Inicio</title>
+    <link rel="stylesheet" href="Diseño.css" />
+  </head>
+  <body>
+    <main class="pantalla">
+      <div class="saludo">
+        <div>
+          <h2 id="saludo">¡Hola!</h2>
+          <p>Continúa tu entrenamiento mental.</p>
+        </div>
+        <span>♢</span>
+      </div>
+      <article class="companion-card villano">
+        <h3>UMBRA</h3>
+        <p>¿Estás listo para aceptar mi desafío de hoy?</p>
+      </article>
+      <article class="companion-card tortuga">
+        <h3>NILO</h3>
+        <p>Recuerda: observa, analiza y usa estrategias.</p>
+      </article>
+      <section class="tarjeta">
+        <div class="nivel-fila">
+          <b>NIVEL <span id="nivel"></span></b><span id="xp"></span>
+        </div>
+        <div class="barra-xp-fondo">
+          <div id="barra" class="barra-xp-relleno"></div>
+        </div>
+        <div class="stats-fila">
+          <div class="stat-box">
+            <div class="valor" id="totalxp"></div>
+            <div class="etiqueta">XP</div>
+          </div>
+          <div class="stat-box">
+            <div class="valor" id="racha"></div>
+            <div class="etiqueta">Racha 🔥</div>
+          </div>
+          <div class="stat-box">
+            <div class="valor" id="logros"></div>
+            <div class="etiqueta">Logros 🏆</div>
+          </div>
+        </div>
+        <button class="btn btn-primario" onclick="location.href = 'reto-diario.html'">
+          RETO DEL DÍA
+        </button>
+      </section>
+    </main>
+    <script src="App.js"></script>
+    <script>
+      if (exigirUsuario()) {
+        const u = usuarioInvitado(),
+          e = leerEstado();
+        saludo.textContent = `¡Hola, ${u.nombre}!`;
+        nivel.textContent = e.nivel;
+        xp.textContent = `${e.xp} / ${e.meta} XP`;
+        barra.style.width = (e.xp / e.meta) * 100 + "%";
+        totalxp.textContent = e.xp;
+        racha.textContent = e.racha;
+        logros.textContent = e.logros;
+        document.body.insertAdjacentHTML("beforeend", navInferior("inicio"));
+      }
+    </script>
+  </body>
+</html>
