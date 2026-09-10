@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ENIGMA — Mapa</title><link rel="stylesheet" href="Diseño.css"></head>
+<body>
+<main class="pantalla mapa">
+  <header class="encabezado"><a href="modos.html">‹</a><h2>MAPA DE DESAFÍOS</h2></header>
+  <p class="subtitulo" id="nombreHabilidad">Tu aventura mental</p>
+  <section class="nodos" id="nodos"></section>
+  <div class="paginacion-mapa">
+    <a id="paginaAnterior" class="flecha-pagina izquierda" aria-label="Página anterior">‹</a>
+    <span id="indicadorPagina"></span>
+    <a id="paginaSiguiente" class="flecha-pagina derecha" aria-label="Página siguiente">›</a>
+  </div>
+</main>
+<script src="App.js"></script>
+<script>
+if(exigirUsuario()){
+  const params=new URLSearchParams(location.search);
+  const habilidad=+(params.get('habilidad')||2);
+  const pagina=Math.max(1,Math.min(3,+(params.get('pagina')||1)));
+  const estado=leerEstado();
+  const actual=Math.min(20,(estado.niveles&&estado.niveles[habilidad])||Math.floor((estado.progreso[habilidad]||0)/10)+1);
+  const hab=HABILIDADES.find(h=>h.id===habilidad);
+  nombreHabilidad.textContent=hab?hab.nombre:'Tu aventura mental';
+
+  const inicio=(pagina-1)*8+1;
+  const fin=Math.min(20,inicio+7);
+  const posiciones=[[63,450],[41,390],[63,330],[40,270],[60,210],[55,150],[72,78],[47,6]];
+  const niveles=Array.from({length:fin-inicio+1},(_,i)=>inicio+i);
+  nodos.innerHTML=niveles.map((nivel,i)=>{
+    const clase=nivel<actual?'hecho':nivel===actual?'actual':'';
+    const activo=nivel<=actual;
+    const p=posiciones[i];
+    return `<a ${activo?`href="desafio.html?habilidad=${habilidad}&nivel=${nivel}"`:''} class="nodo ${clase}" style="left:${p[0]}%;top:${p[1]}px;transform:translateX(-50%)">${nivel}${nivel<actual?'<small>✓</small>':nivel>actual?'<small>🔒</small>':'<small>ACTUAL</small>'}</a>`;
+  }).join('');
+
+  indicadorPagina.textContent=`${inicio}–${fin}`;
+  if(pagina>1){paginaAnterior.href=`mapa.html?habilidad=${habilidad}&pagina=${pagina-1}`}else{paginaAnterior.classList.add('oculta')}
+  if(pagina<3){paginaSiguiente.href=`mapa.html?habilidad=${habilidad}&pagina=${pagina+1}`}else{paginaSiguiente.classList.add('oculta')}
+  document.body.insertAdjacentHTML('beforeend',navInferior('inicio'));
+}
+</script>
+</body></html>

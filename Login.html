@@ -1,0 +1,28 @@
+<!doctype html><html lang="es">
+  <head>
+    <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ENIGMA — Bienvenida</title><link rel="stylesheet" href="Diseño.css"></head>
+  <body>
+    <main class="pantalla"><div class="hero-login"></div>
+      <div class="login-contenido">
+    <header class="marca"><div class="logo-cerebro">🧠</div>
+      <h1>ENIGMA</h1>
+      <p>ENTRENA TU MENTE · SUPERA CUALQUIER DESAFÍO</p>
+    </header>
+      <section class="login-acciones">
+        <div id="mensaje-error" class="error-msg"></div>
+        <form id="form-login">
+        <input id="login-nombre" maxlength="24" placeholder="Tu nombre de jugador" required>
+        <button class="btn btn-primario">JUGAR</button>
+      </form>
+      </section>
+    </div>
+  </main>
+      <script src="App.js"></script>
+<script>
+if(usuarioInvitado())location.href='home.html';document.querySelector('form').onsubmit=e=>{e.preventDefault();
+const nombre=document.querySelector('input').value.trim();
+if(!nombre)return;localStorage.setItem('enigma_invitado',JSON.stringify({id:'invitado-local',nombre}));location.href='home.html'}</script>
+</body>
+</html>

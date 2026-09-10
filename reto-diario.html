@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ENIGMA — Reto diario</title><link rel="stylesheet" href="Diseño.css"></head>
+<body><main class="pantalla reto-diario">
+ <header class="encabezado"><a href="home.html">‹</a><h2>RETO ESPECIAL DEL DÍA</h2></header><p class="subtitulo">Una prueba avanzada que cambia cada día</p>
+ <section id="diarioPregunta"><article class="tarjeta diario-cabecera"><span class="diario-insignia">★ DESAFÍO AVANZADO</span><h2 id="diarioTitulo"></h2><div id="diarioEnunciado" class="diario-enunciado"></div><div class="diario-premio">Premio de hoy: <b id="diarioXp"></b> XP</div></article><div id="diarioOpciones"></div></section>
+ <section id="diarioResultado" class="oculto"><div class="resultado-centro"><h2 id="diarioResTitulo"></h2><p id="diarioResTexto"></p><div class="resultado-heroe"></div><div class="resultado-xp" id="diarioResXp"></div></div><article class="tarjeta estrategia"><strong>ESTRATEGIA</strong><p id="diarioExplicacion"></p></article><button class="btn btn-primario" onclick="location.href='home.html'">VOLVER AL INICIO</button></section>
+</main><script src="App.js"></script><script>
+if(exigirUsuario()){
+ const reto=retoDiarioActual(),estado=leerEstado(),hoy=new Date().toLocaleDateString('en-CA');
+ diarioTitulo.textContent=reto.titulo;diarioEnunciado.textContent=reto.pregunta;diarioXp.textContent=reto.xp;
+ diarioOpciones.innerHTML=reto.opciones.map((o,i)=>`<button class="opcion-btn" data-i="${i}"><b>${'ABCD'[i]}</b><span>${o}</span></button>`).join('');
+ let respondido=false;document.querySelectorAll('.opcion-btn').forEach(b=>b.onclick=()=>{
+  if(respondido)return;respondido=true;const ok=+b.dataset.i===reto.correcta;
+  document.querySelectorAll('.opcion-btn').forEach((x,i)=>{x.disabled=true;if(i===reto.correcta)x.classList.add('correcta');else if(x===b)x.classList.add('incorrecta')});
+  const yaCompletado=estado.ultimoRetoDiario===hoy;
+  if(ok&&!yaCompletado){estado.ultimoRetoDiario=hoy;estado.completados++;estado.correctos++;estado.xp+=reto.xp;if(estado.xp>=estado.meta){estado.xp-=estado.meta;estado.nivel++;estado.meta=Math.round(estado.meta*1.25);estado.logros++}guardarEstado(estado)}
+  setTimeout(()=>{diarioPregunta.classList.add('oculto');diarioResultado.classList.remove('oculto');diarioResTitulo.textContent=ok?'¡RETO DIARIO SUPERADO!':'RESPUESTA INCORRECTA';diarioResTitulo.style.color=ok?'#83e55a':'#ff7169';diarioResTexto.textContent=ok?'Resolviste el desafío avanzado de hoy.':'Analiza la estrategia y vuelve mañana para un nuevo desafío.';diarioResXp.textContent=ok?(yaCompletado?'Completado hoy':`+ ${reto.xp} XP`):'Sin recompensa';diarioExplicacion.textContent=reto.explicacion},450);
+ });
+ document.body.insertAdjacentHTML('beforeend',navInferior('inicio'));
+}
+</script></body></html>

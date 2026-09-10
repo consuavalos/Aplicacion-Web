@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>ENIGMA — Desafío</title>
+    <link rel="stylesheet" href="Diseño.css" />
+  </head>
+  <body>
+    <main class="pantalla">
+      <div class="barra-progreso-top">
+        <a id="volverMapa" href="mapa.html">‹</a>
+        <div class="fondo"><div id="progresoNivel" class="relleno"></div></div>
+        <small id="contadorNivel"></small
+        ><span class="vidas">♥ <b id="vidas"></b></span>
+      </div>
+      <section id="pregunta">
+        <div class="tarjeta">
+          <div class="desafio-tag" id="titulo"></div>
+          <p class="desafio-enunciado" id="enunciado"></p>
+          <div id="visualReto" class="reto-visual oculto"></div>
+          <div class="secuencia" id="secuencia"></div>
+        </div>
+        <div id="panelMemoria" class="oculto">
+          <div class="memoria-marcador">
+            <span>🎯 Parejas <b id="parejas">0</b>/5</span
+            ><span>↻ Movimientos <b id="movimientos">0</b></span>
+          </div>
+          <div id="tableroMemoria" class="tablero-memoria"></div>
+        </div>
+        <div id="opciones"></div>
+        <div class="ayudas" id="ayudas">
+          <button class="ayuda" id="pista">💡<br />Pista</button
+          ><button class="ayuda" id="eliminar">
+            ◯<br />Eliminar 2 opciones
+          </button>
+        </div>
+      </section>
+      <section id="resultado" class="oculto">
+        <div class="resultado-centro">
+          <h2 id="resTitulo"></h2>
+          <p id="resTexto"></p>
+          <div class="resultado-heroe"></div>
+          <div class="resultado-xp" id="resXp"></div>
+          <div class="resultado-racha" id="resRacha"></div>
+        </div>
+        <button class="btn btn-primario" id="verExp">VER EXPLICACIÓN</button>
+      </section>
+      <section id="explicacion" class="oculto">
+        <header class="encabezado"><h2>EXPLICACIÓN</h2></header>
+        <article class="tarjeta explicacion"><p id="expTexto"></p></article>
+        <div class="resultado-heroe" style="height: 180px"></div>
+        <article class="tarjeta estrategia">
+          <strong>ESTRATEGIA APRENDIDA</strong>
+          <h3 id="estrategia"></h3>
+          <p>
+            Identifica la regla, compruébala y aplícala al siguiente elemento.
+          </p>
+        </article>
+        <button class="btn btn-primario" id="continuarMapa">CONTINUAR</button>
+      </section>
+    </main>
+    <script src="App.js"></script>
+    <script>
+      if (exigirUsuario()) {
+        const params = new URLSearchParams(location.search),
+          id = +(params.get("habilidad") || 2),
+          nivel = +(params.get("nivel") || 1),
+          reto = obtenerReto(id, nivel),
+          estado = leerEstado();
+        volverMapa.href = `mapa.html?habilidad=${id}`;
+        continuarMapa.onclick = () =>
+          (location.href = `mapa.html?habilidad=${id}`);
+        contadorNivel.textContent = `${nivel}/20`;
+        progresoNivel.style.width = (nivel / 20) * 100 + "%";
+        vidas.textContent = estado.vidas;
+        titulo.textContent = reto.titulo;
+        enunciado.textContent = reto.pregunta;
+        if (reto.visual) {
+          visualReto.innerHTML = reto.visual;
+          visualReto.classList.remove("oculto");
+        }
+        if (reto.secuencia)
+          secuencia.innerHTML = reto.secuencia
+            .map((x) => `<b>${x}</b>`)
+            .join("");
+        opciones.innerHTML =
+          id === 3
+            ? ""
+            : reto.opciones
+                .map(
+                  (x, i) =>
+                    `<button class="opcion-btn" data-i="${i}"><b>${"ABCD"[i]}</b><span>${x}</span></button>`,
+                )
+                .join("");
+        let respondido = false;
+        document.querySelectorAll(".opcion-btn").forEach(
+          (b) =>
+            (b.onclick = () => {
+              if (respondido) return;
+              respondido = true;
+              const ok = +b.dataset.i === reto.correcta;
+              document.querySelectorAll(".opcion-btn").forEach((x, i) => {
+                x.disabled = true;
+                if (i === reto.correcta) x.classList.add("correcta");
+                else if (x === b) x.classList.add("incorrecta");
+              });
+              completarReto(id, ok, 20, nivel);
+              setTimeout(() => {
+                pregunta.classList.add("oculto");
+                resultado.classList.remove("oculto");
+                resTitulo.textContent = ok ? "¡CORRECTO!" : "SIGUE INTENTANDO";
+                resTitulo.style.color = ok ? "#83e55a" : "#ff7169";
+                resTexto.textContent = ok
+                  ? "Muy bien, encontraste la respuesta."
+                  : "Cada intento entrena tu mente.";
+                resXp.textContent = ok ? "+ 20 XP" : "SIN XP ESTA VEZ";
+                resRacha.textContent = `RACHA ${leerEstado().racha} DÍAS 🔥`;
+                expTexto.textContent = reto.explicacion;
+                estrategia.textContent = reto.estrategia;
+              }, 450);
+            }),
+        );
+        if (id === 3) iniciarJuegoMemoria();
+        pista.onclick = () => alert(reto.explicacion.split(".")[0] + ".");
+        eliminar.onclick = () =>
+          document.querySelectorAll(".opcion-btn").forEach((b, i) => {
+            if (i !== reto.correcta && i % 2 === 0) b.style.opacity = ".25";
+          });
+        verExp.onclick = () => {
+          resultado.classList.add("oculto");
+          explicacion.classList.remove("oculto");
+        };
+
+        function iniciarJuegoMemoria() {
+          const colecciones = [
+            ["🌙", "🔑", "💎", "🧪", "📜"],
+            ["🐢", "🦉", "🦊", "🐉", "🦋"],
+            ["🍄", "🌻", "🌵", "🍀", "🌹"],
+            ["🚀", "🪐", "⭐", "☄️", "🌍"],
+            ["🎯", "♟️", "🎲", "🧩", "🏆"],
+          ];
+          const imagenes = colecciones[(nivel - 1) % colecciones.length],
+            cartas = [...imagenes, ...imagenes].map((imagen, i) => ({
+              imagen,
+              id: i,
+            }));
+          for (let i = cartas.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [cartas[i], cartas[j]] = [cartas[j], cartas[i]];
+          }
+          titulo.textContent = `DESAFÍO: MEMORIA · NIVEL ${nivel}`;
+          enunciado.textContent =
+            "Encuentra las cinco parejas de imágenes. Recuerda dónde está cada una.";
+          panelMemoria.classList.remove("oculto");
+          ayudas.classList.add("oculto");
+          tableroMemoria.innerHTML = cartas
+            .map(
+              (c, i) =>
+                `<button class="carta-memoria" data-pos="${i}" data-imagen="${c.imagen}" aria-label="Carta oculta"><span class="carta-reverso">?</span><span class="carta-imagen">${c.imagen}</span></button>`,
+            )
+            .join("");
+          let primera = null,
+            bloqueado = false,
+            encontradas = 0,
+            movs = 0;
+          tableroMemoria.querySelectorAll(".carta-memoria").forEach(
+            (c) =>
+              (c.onclick = () => {
+                if (
+                  bloqueado ||
+                  c.classList.contains("abierta") ||
+                  c.classList.contains("encontrada")
+                )
+                  return;
+                c.classList.add("abierta");
+                if (!primera) {
+                  primera = c;
+                  return;
+                }
+                movs++;
+                movimientos.textContent = movs;
+                if (primera.dataset.imagen === c.dataset.imagen) {
+                  primera.classList.add("encontrada");
+                  c.classList.add("encontrada");
+                  primera = null;
+                  encontradas++;
+                  parejas.textContent = encontradas;
+                  if (encontradas === 5)
+                    setTimeout(() => terminarMemoria(movs), 500);
+                } else {
+                  bloqueado = true;
+                  const anterior = primera;
+                  primera = null;
+                  setTimeout(() => {
+                    anterior.classList.remove("abierta");
+                    c.classList.remove("abierta");
+                    bloqueado = false;
+                  }, 750);
+                }
+              }),
+          );
+        }
+        function terminarMemoria(movs) {
+          const nuevo = completarReto(id, true, 30, nivel);
+          pregunta.classList.add("oculto");
+          resultado.classList.remove("oculto");
+          resTitulo.textContent = "¡MEMORIA COMPLETADA!";
+          resTexto.textContent = `Encontraste las 5 parejas en ${movs} movimientos.`;
+          resXp.textContent = "+ 30 XP";
+          resRacha.textContent = `RACHA ${nuevo.racha} DÍAS 🔥`;
+          expTexto.textContent =
+            "Recordar la posición de cada imagen y descartar ubicaciones mejora tu memoria visual.";
+          estrategia.textContent = "Memoria visual y asociación";
+        }
+      }
+    </script>
+  </body>
+</html>
