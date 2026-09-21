@@ -13,7 +13,15 @@
         <h2>MI PERFIL</h2>
       </header>
       <section class="perfil-encabezado">
-        <div class="perfil-avatar"></div>
+        <div class="perfil-avatar-wrap">
+          <div class="perfil-avatar" id="avatarPerfil"></div>
+          <label class="boton-camara" for="fotoPerfil" aria-label="Cambiar foto de perfil" title="Cambiar foto de perfil">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M8.5 5.5 10 3.5h4l1.5 2H19a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-10a2 2 0 0 1 2-2h3.5Zm3.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0-1.8a2.2 2.2 0 1 1 0-4.4 2.2 2.2 0 0 1 0 4.4Z" />
+            </svg>
+          </label>
+          <input id="fotoPerfil" class="input-foto" type="file" accept="image/*" capture="user" />
+        </div>
         <div>
           <h2 id="nombre"></h2>
           <div class="nivel-tag">Nivel <span id="nivel"></span></div>
@@ -52,6 +60,7 @@
         const u = usuarioInvitado(),
           e = leerEstado();
         nombre.textContent = u.nombre;
+        if (e.avatar) avatarPerfil.style.backgroundImage = `url(${e.avatar})`;
         nivel.textContent = e.nivel;
         xp.textContent = `${e.xp} / ${e.meta} XP`;
         barra.style.width = (e.xp / e.meta) * 100 + "%";
@@ -68,6 +77,30 @@
         salir.onclick = async () => {
           await cerrarSesion();
           location.href = "Login.html";
+        };
+        fotoPerfil.onchange = () => {
+          const archivo = fotoPerfil.files[0];
+          if (!archivo || !archivo.type.startsWith("image/")) return;
+          const lector = new FileReader();
+          lector.onload = () => {
+            const imagen = new Image();
+            imagen.onload = () => {
+              const canvas = document.createElement("canvas");
+              const lado = 256;
+              canvas.width = lado;
+              canvas.height = lado;
+              const ctx = canvas.getContext("2d");
+              const escala = Math.max(lado / imagen.width, lado / imagen.height);
+              const ancho = imagen.width * escala;
+              const alto = imagen.height * escala;
+              ctx.drawImage(imagen, (lado - ancho) / 2, (lado - alto) / 2, ancho, alto);
+              e.avatar = canvas.toDataURL("image/jpeg", 0.82);
+              guardarEstado(e);
+              avatarPerfil.style.backgroundImage = `url(${e.avatar})`;
+            };
+            imagen.src = lector.result;
+          };
+          lector.readAsDataURL(archivo);
         };
         document.body.insertAdjacentHTML("beforeend", navInferior("perfil"));
       }
