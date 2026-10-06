@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ENIGMA — Reto diario</title><link rel="stylesheet" href="Diseño.css"></head>
 <body><main class="pantalla reto-diario">
- <header class="encabezado"><a href="home.html">‹</a><h2>RETO ESPECIAL DEL DÍA</h2></header><p class="subtitulo">Una prueba avanzada que cambia cada día</p>
+ <header class="encabezado"><a href="index.html">‹</a><h2>RETO ESPECIAL DEL DÍA</h2></header><p class="subtitulo">Una prueba avanzada que cambia cada día</p>
  <section id="diarioPregunta"><article class="tarjeta diario-cabecera"><span class="diario-insignia">★ DESAFÍO AVANZADO</span><h2 id="diarioTitulo"></h2><div id="diarioEnunciado" class="diario-enunciado"></div><div class="diario-premio">Premio de hoy: <b id="diarioXp"></b> XP</div></article><div id="diarioOpciones"></div></section>
- <section id="diarioResultado" class="oculto"><div class="resultado-centro"><h2 id="diarioResTitulo"></h2><p id="diarioResTexto"></p><div class="resultado-heroe"></div><div class="resultado-xp" id="diarioResXp"></div></div><article class="tarjeta estrategia"><strong>ESTRATEGIA</strong><p id="diarioExplicacion"></p></article><button class="btn btn-primario" onclick="location.href='home.html'">VOLVER AL INICIO</button></section>
+ <section id="diarioResultado" class="oculto"><div class="resultado-centro"><h2 id="diarioResTitulo"></h2><p id="diarioResTexto"></p><div class="resultado-heroe"></div><div class="resultado-xp" id="diarioResXp"></div></div><article class="tarjeta estrategia"><strong>ESTRATEGIA</strong><p id="diarioExplicacion"></p></article><button class="btn btn-primario" onclick="location.href='index.html'">VOLVER AL INICIO</button></section>
 </main><script src="App.js"></script><script>
 if(exigirUsuario()){
  const reto=retoDiarioActual(),estado=leerEstado(),hoy=new Date().toLocaleDateString('en-CA');

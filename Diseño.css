@@ -740,6 +740,9 @@ body.tema-claro .modo-meta, body.tema-claro .modo-pct { font-size: 12px; }
 body.tema-claro .saludo h2 { font-size: 25px; }
 body.tema-claro .saludo p { font-size: 14px; }
 body.tema-claro .subtitulo { color: #fff8dc; font-size: 14px; font-weight: 700; text-shadow: 0 1px 3px rgba(25, 75, 35, .7); }
+body.tema-claro .desafio-enunciado { color: #fff; }
+body.tema-claro .diario-enunciado { color: #fff; }
+body.tema-claro .diario-premio { color: #29451f; font-weight: 700; }
 .modal-ajustes {
   position: fixed;
   z-index: 100;

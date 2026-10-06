@@ -208,4 +208,5 @@ function montarAjustes(){
 }
 document.addEventListener('keydown',e=>{if(!e.ctrlKey&&!e.metaKey&&!e.altKey)sonarTecla('tecla')});
 document.addEventListener('click',e=>{if(e.target.closest('button,.nav-item,.modo-card,.nodo'))sonarTecla('boton')});
+document.addEventListener('click',e=>{const volver=e.target.closest('.encabezado a[href="home.html"]');if(volver){e.preventDefault();location.href='index.html'}});
 document.addEventListener('DOMContentLoaded',montarAjustes);
