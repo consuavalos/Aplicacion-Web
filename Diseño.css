@@ -543,6 +543,20 @@ input {
   border-color: #7bd64d;
   box-shadow: 0 0 14px rgba(123, 214, 77, 0.35);
 }
+/* Las tarjetas descubiertas muestran su imagen con claridad. */
+.carta-memoria.abierta,
+.carta-memoria.encontrada {
+  transform: none;
+  background: linear-gradient(145deg, #25435a, #102333);
+}
+.carta-memoria.abierta .carta-imagen,
+.carta-memoria.encontrada .carta-imagen {
+  opacity: 1;
+  transform: none;
+  font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif;
+  font-size: 36px;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .65));
+}
 .resultado-centro {
   text-align: center;
   padding: 30px 8px;
@@ -743,6 +757,79 @@ body.tema-claro .subtitulo { color: #fff8dc; font-size: 14px; font-weight: 700; 
 body.tema-claro .desafio-enunciado { color: #fff; }
 body.tema-claro .diario-enunciado { color: #fff; }
 body.tema-claro .diario-premio { color: #29451f; font-weight: 700; }
+/* Contraste de desafíos en modo claro */
+body.tema-claro .desafio-tag { color: #9b2734; font-weight: 800; }
+body.tema-claro .desafio-enunciado { color: #29451f; font-weight: 700; }
+body.tema-claro .secuencia b { color: #c9e7aa; border-color: #527048; }
+body.tema-claro .opcion-btn { color: #fffdf5; border-color: #526f48; font-weight: 700; }
+body.tema-claro .opcion-btn b { color: #c9e7aa; }
+body.tema-claro .ayuda { color: #fffdf5; border-color: #526f48; font-weight: 700; }
+body.tema-claro .memoria-marcador { color: #fff8e9; font-weight: 800; text-shadow: 0 1px 3px rgba(16, 55, 23, .65); }
+body.tema-claro .memoria-marcador b { color: #ffd4a6; }
+body.tema-claro .carta-memoria { color: #fffdf5; border-color: #527048; }
+body.tema-claro .carta-memoria .carta-reverso { color: #ffd166; }
+/* En modo oscuro, los textos de estos paneles se mantienen claros. */
+body:not(.tema-claro) .desafio-enunciado,
+body:not(.tema-claro) .opcion-btn,
+body:not(.tema-claro) .ayuda,
+body:not(.tema-claro) .memoria-marcador,
+body:not(.tema-claro) .carta-memoria { color: #fffdf5; }
+/* Contraste reforzado para resultados, textos e indicadores en ambos temas. */
+.resultado-centro h2,
+.resultado-xp,
+.resultado-racha,
+.vidas,
+.memoria-marcador b,
+.diario-insignia {
+  text-shadow: 0 2px 3px rgba(0, 0, 0, .72);
+}
+body.tema-claro .resultado-centro h2 { color: #fff4dd; text-shadow: 0 2px 5px rgba(22, 58, 24, .85); }
+body.tema-claro .resultado-centro p { color: #173f20; font-weight: 700; text-shadow: 0 1px 2px rgba(255, 255, 255, .65); }
+body.tema-claro .resultado-xp { color: #b51f35; text-shadow: 0 1px 2px rgba(255, 239, 199, .9); }
+body.tema-claro .resultado-racha { display: inline-block; padding: 6px 11px; border-radius: 999px; background: rgba(20, 57, 28, .8); color: #fff4d6; font-weight: 800; text-shadow: none; }
+body.tema-claro .vidas { color: #fff0d2; font-weight: 800; }
+body.tema-claro .desafio-tag,
+body.tema-claro .diario-insignia { text-shadow: 0 1px 2px rgba(255, 255, 255, .85); }
+body:not(.tema-claro) .resultado-centro p { color: #fffdf5; }
+body:not(.tema-claro) .resultado-centro h2 { color: #d9ffbc; }
+body:not(.tema-claro) .resultado-xp { color: #ffd56d; }
+body:not(.tema-claro) .resultado-racha { color: #fff0bb; font-weight: 800; }
+/* Fondo y paneles flotantes exclusivos del tema oscuro. */
+body:not(.tema-claro) {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(112, 53, 170, .42), transparent 30%),
+    radial-gradient(circle at 88% 24%, rgba(25, 93, 176, .38), transparent 32%),
+    radial-gradient(circle at 76% 78%, rgba(151, 38, 58, .28), transparent 30%),
+    radial-gradient(circle at 18% 84%, rgba(34, 119, 76, .28), transparent 28%),
+    #040712;
+}
+body:not(.tema-claro) .pantalla {
+  background:
+    radial-gradient(circle at 8% 20%, rgba(119, 58, 183, .22), transparent 25%),
+    radial-gradient(circle at 90% 32%, rgba(27, 102, 193, .2), transparent 28%),
+    radial-gradient(circle at 78% 80%, rgba(169, 38, 61, .16), transparent 27%),
+    radial-gradient(circle at 16% 85%, rgba(40, 139, 78, .16), transparent 25%),
+    linear-gradient(160deg, rgba(5, 10, 22, .94), rgba(3, 8, 16, .88));
+}
+body:not(.tema-claro) .tarjeta,
+body:not(.tema-claro) .modo-card,
+body:not(.tema-claro) .companion-card,
+body:not(.tema-claro) .stats-panel,
+body:not(.tema-claro) .opcion-btn,
+body:not(.tema-claro) .ayuda,
+body:not(.tema-claro) .secuencia b,
+body:not(.tema-claro) .carta-memoria {
+  background: linear-gradient(145deg, rgba(35, 45, 77, .8), rgba(10, 20, 38, .76));
+  border-color: rgba(123, 157, 203, .48);
+  box-shadow: 0 9px 25px rgba(2, 4, 13, .35), inset 0 1px rgba(198, 219, 255, .08);
+  backdrop-filter: blur(8px);
+}
+/* La barra del desafío reserva un renglón visible para las cinco vidas. */
+body:has(.barra-progreso-top) .barra-progreso-top { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; column-gap: 12px; row-gap: 8px; align-items: center; padding-right: 94px; }
+body:has(.barra-progreso-top) .barra-progreso-top > a { grid-column: 1; grid-row: 1; }
+body:has(.barra-progreso-top) .barra-progreso-top > .fondo { grid-column: 2; grid-row: 1; }
+body:has(.barra-progreso-top) .barra-progreso-top > small { grid-column: 3; grid-row: 1; }
+body:has(.barra-progreso-top) .barra-progreso-top > .vidas { grid-column: 2 / 4; grid-row: 2; justify-self: end; padding: 5px 9px; border-radius: 999px; background: rgba(18, 42, 28, .88); color: #fff3d5; font-size: 12px; font-weight: 800; }
 .modal-ajustes {
   position: fixed;
   z-index: 100;

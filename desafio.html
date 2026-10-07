@@ -12,7 +12,7 @@
         <a id="volverMapa" href="mapa.html">‹</a>
         <div class="fondo"><div id="progresoNivel" class="relleno"></div></div>
         <small id="contadorNivel"></small
-        ><span class="vidas">♥ <b id="vidas"></b></span>
+        ><span class="vidas">♥ VIDAS <b id="vidas"></b>/5</span>
       </div>
       <section id="pregunta">
         <div class="tarjeta">
@@ -97,6 +97,11 @@
         document.querySelectorAll(".opcion-btn").forEach(
           (b) =>
             (b.onclick = () => {
+              if (estado.vidas <= 0) {
+                const minutos = Math.max(1, Math.ceil((estado.proximaRecargaVidas - Date.now()) / 60000));
+                alert(`No tienes vidas disponibles. Vuelve en ${minutos} minutos.`);
+                return;
+              }
               if (respondido) return;
               respondido = true;
               const ok = +b.dataset.i === reto.correcta;
@@ -189,6 +194,8 @@
                   if (encontradas === 5)
                     setTimeout(() => terminarMemoria(movs), 500);
                 } else {
+                  const actualizado = perderVida();
+                  vidas.textContent = actualizado.vidas;
                   bloqueado = true;
                   const anterior = primera;
                   primera = null;

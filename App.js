@@ -123,8 +123,8 @@ function obtenerReto(habilidad,nivel){
 }
 
 function leerEstado(){
-  const base={nivel:1,xp:0,meta:500,racha:0,logros:0,completados:0,correctos:0,vidas:3,niveles:{},progreso:{1:0,2:0,3:0,4:0,5:0,6:0,7:0}};
-  try{return {...base,...JSON.parse(localStorage.getItem(claveEstadoJugador())||'{}')}}catch{return base}
+  const base={nivel:1,xp:0,meta:500,racha:0,logros:0,completados:0,correctos:0,vidas:5,niveles:{},progreso:{1:0,2:0,3:0,4:0,5:0,6:0,7:0}};
+  try{const e={...base,...JSON.parse(localStorage.getItem(claveEstadoJugador())||'{}')};const ahora=Date.now();if(e.sistemaVidasVersion!==2){e.vidas=5;e.sistemaVidasVersion=2;delete e.proximaRecargaVidas;guardarEstado(e)}else if(e.vidas<=0&&e.proximaRecargaVidas&&ahora>=e.proximaRecargaVidas){e.vidas=5;delete e.proximaRecargaVidas;guardarEstado(e)}return e}catch{return base}
 }
 function claveEstadoJugador(){
   const usuario=usuarioInvitado();
@@ -144,8 +144,9 @@ function usuarioInvitado(){try{return JSON.parse(localStorage.getItem('enigma_in
 async function obtenerUsuarioActual(){return usuarioInvitado()}
 async function obtenerPerfil(){const u=usuarioInvitado(),e=leerEstado();return {data:u?{id:u.id,nombre:u.nombre,nivel:e.nivel,xp:e.xp,xp_siguiente_nivel:e.meta,racha:e.racha,logros:e.logros}:null,error:null}}
 async function cerrarSesion(){localStorage.removeItem('enigma_invitado')}
+function perderVida(e=leerEstado()){e.vidas=Math.max(0,e.vidas-1);if(e.vidas===0)e.proximaRecargaVidas=Date.now()+30*60*1000;guardarEstado(e);return e}
 function completarReto(habilidad,correcto,xp=20,nivelReto=1){
-  const e=leerEstado(); e.niveles=e.niveles||{}; e.completados++; if(correcto){e.correctos++;e.xp+=xp;e.progreso[habilidad]=Math.min(100,(e.progreso[habilidad]||0)+5);e.niveles[habilidad]=Math.max(e.niveles[habilidad]||1,Math.min(20,nivelReto+1));if(e.xp>=e.meta){e.xp-=e.meta;e.nivel++;e.meta=Math.round(e.meta*1.25);e.logros++}}else{e.vidas=Math.max(0,e.vidas-1)} guardarEstado(e); return e;
+  const e=leerEstado(); e.niveles=e.niveles||{}; e.completados++; if(correcto){e.correctos++;e.xp+=xp;e.progreso[habilidad]=Math.min(100,(e.progreso[habilidad]||0)+5);e.niveles[habilidad]=Math.max(e.niveles[habilidad]||1,Math.min(20,nivelReto+1));if(e.xp>=e.meta){e.xp-=e.meta;e.nivel++;e.meta=Math.round(e.meta*1.25);e.logros++}}else{perderVida(e)} guardarEstado(e); return e;
 }
 
 const RETOS_DIARIOS=[
@@ -181,17 +182,19 @@ function aplicarIdioma(idioma){
  nodos.forEach(n=>{const limpio=n.nodeValue.trim();if(dic[limpio])n.nodeValue=n.nodeValue.replace(limpio,dic[limpio]);else if(/^¡Hola, .+!$/.test(limpio))n.nodeValue=n.nodeValue.replace(limpio,idioma==='en'?limpio.replace('¡Hola','Hello').replace('!','!'):limpio.replace('¡Hola','Olá'))});
 }
 
-let audioEnigma=null,temporizadorMusica=null,nodoMusica=null;
+let audioEnigma=null,temporizadorMusica=null,nodoMusica=null,nodosMusica=[];
 function contextoAudio(){if(!audioEnigma)audioEnigma=new (window.AudioContext||window.webkitAudioContext)();if(audioEnigma.state==='suspended')audioEnigma.resume();return audioEnigma}
 function sonarTecla(tipo='tecla'){
  const a=leerAjustes();if(!a.sonidos)return;const ctx=contextoAudio(),osc=ctx.createOscillator(),gain=ctx.createGain();osc.type=tipo==='boton'?'sine':'triangle';osc.frequency.value=tipo==='boton'?520:300+Math.random()*90;gain.gain.setValueAtTime(.035*(a.volumen/100),ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.07);osc.connect(gain).connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+.075);
 }
-function detenerMusica(){if(temporizadorMusica)clearInterval(temporizadorMusica);temporizadorMusica=null;if(nodoMusica){try{nodoMusica.stop()}catch{}nodoMusica=null}}
+function detenerMusica(){if(temporizadorMusica)clearInterval(temporizadorMusica);temporizadorMusica=null;nodosMusica.forEach(n=>{try{n.stop()}catch{}});nodosMusica=[];if(nodoMusica){try{nodoMusica.stop()}catch{}nodoMusica=null}}
+function tonoAmbiente(ctx,tipo,frecuencia,duracion,volumen,desde=0,filtro=1200){const osc=ctx.createOscillator(),gain=ctx.createGain(),f=ctx.createBiquadFilter(),ahora=ctx.currentTime+desde;osc.type=tipo;osc.frequency.value=frecuencia;f.type='lowpass';f.frequency.value=filtro;gain.gain.setValueAtTime(.0001,ahora);gain.gain.exponentialRampToValueAtTime(Math.max(.0002,volumen),ahora+.35);gain.gain.exponentialRampToValueAtTime(.0001,ahora+duracion);osc.connect(f).connect(gain).connect(ctx.destination);nodosMusica.push(osc);osc.start(ahora);osc.stop(ahora+duracion+.05)}
+function ruidoAmbiente(ctx,tipo,duracion,volumen,desde=0){const largo=Math.floor(ctx.sampleRate*duracion),buffer=ctx.createBuffer(1,largo,ctx.sampleRate),datos=buffer.getChannelData(0),fuente=ctx.createBufferSource(),f=ctx.createBiquadFilter(),gain=ctx.createGain(),ahora=ctx.currentTime+desde;let anterior=0;for(let i=0;i<largo;i++){const blanco=Math.random()*2-1;if(tipo==='viento'||tipo==='vientoFuerte'){anterior=anterior*.985+blanco*.015;datos[i]=anterior*5}else if(tipo==='agua'){anterior=anterior*.7+blanco*.3;datos[i]=anterior}else{datos[i]=blanco*(Math.random()>.82?1:.22)}}if(tipo==='agua'){f.type='bandpass';f.frequency.value=1100;f.Q.value=.55}else if(tipo==='hojas'){f.type='highpass';f.frequency.value=1700}else{f.type='lowpass';f.frequency.value=tipo==='vientoFuerte'?300:550}fuente.buffer=buffer;gain.gain.setValueAtTime(.0001,ahora);gain.gain.exponentialRampToValueAtTime(Math.max(.0002,volumen),ahora+.6);gain.gain.exponentialRampToValueAtTime(.0001,ahora+duracion);fuente.connect(f).connect(gain).connect(ctx.destination);nodosMusica.push(fuente);fuente.start(ahora);fuente.stop(ahora+duracion+.05)}
 function iniciarMusica(){
  detenerMusica();const a=leerAjustes();if(!a.musica)return;const ctx=contextoAudio();
- const escalas={focus:[220,261.63,329.63,392],forest:[196,246.94,293.66,369.99],calm:[174.61,220,261.63,329.63]},notas=escalas[a.mezcla]||escalas.focus;
- const tocar=()=>{const osc=ctx.createOscillator(),gain=ctx.createGain(),filtro=ctx.createBiquadFilter();nodoMusica=osc;osc.type=a.mezcla==='calm'?'sine':'triangle';osc.frequency.value=notas[Math.floor(Math.random()*notas.length)]/2;filtro.type='lowpass';filtro.frequency.value=900;const ahora=ctx.currentTime,vol=.12*(a.volumen/100);gain.gain.setValueAtTime(.0001,ahora);gain.gain.exponentialRampToValueAtTime(vol,ahora+.25);gain.gain.exponentialRampToValueAtTime(.0001,ahora+3.8);osc.connect(filtro).connect(gain).connect(ctx.destination);osc.start(ahora);osc.stop(ahora+4)};
- tocar();temporizadorMusica=setInterval(tocar,3200);
+ const vol=.035+.38*Math.pow(a.volumen/100,.75);
+ const tocar=()=>{if(a.mezcla==='forest'){ruidoAmbiente(ctx,'viento',6.8,vol*.72);ruidoAmbiente(ctx,'hojas',6.2,vol*.22,.35)}else if(a.mezcla==='calm'){ruidoAmbiente(ctx,'agua',6.8,vol*.7);ruidoAmbiente(ctx,'viento',6.2,vol*.15,.45)}else{ruidoAmbiente(ctx,'agua',6.8,vol*.44);ruidoAmbiente(ctx,'vientoFuerte',6.8,vol*.48);ruidoAmbiente(ctx,'hojas',5.8,vol*.2,.65)}};
+ tocar();temporizadorMusica=setInterval(tocar,7000);
 }
 function montarAjustes(){
  if(!usuarioInvitado()||location.pathname.toLowerCase().endsWith('login.html'))return;
