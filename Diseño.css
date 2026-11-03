@@ -359,6 +359,12 @@ input {
 .nodos {
   height: 646px;
 }
+.enlace-actividades {
+  display: block;
+  margin: 12px 0 16px;
+  text-align: center;
+  text-decoration: none;
+}
 .nodo {
   position: absolute;
   width: 70px;
@@ -754,6 +760,16 @@ body.tema-claro .modo-meta, body.tema-claro .modo-pct { font-size: 12px; }
 body.tema-claro .saludo h2 { font-size: 25px; }
 body.tema-claro .saludo p { font-size: 14px; }
 body.tema-claro .subtitulo { color: #fff8dc; font-size: 14px; font-weight: 700; text-shadow: 0 1px 3px rgba(25, 75, 35, .7); }
+body.tema-oceano { --gold:#35b9d4; --gold2:#147d9c; --cyan:#42c7df; }
+body.tema-oceano.tema-claro { --gold:#117b9b; --gold2:#07526e; --cyan:#1787a3; }
+body.tema-oceano .btn-primario { background:linear-gradient(#79e4ee,#24a9c7); color:#073542; box-shadow:0 7px 22px rgba(21,164,193,.2); }
+body.tema-oceano.tema-claro .btn-primario { color:#fff; }
+body.skin-umbra .companion-card.villano { border-color:#bb76ed; box-shadow:0 0 18px rgba(169,90,222,.2); }
+body.skin-umbra .companion-card.villano h3:after { content:" · NOCTURNA"; font-size:9px; }
+body.skin-nilo .companion-card.tortuga { border-color:#55c6aa; box-shadow:0 0 18px rgba(65,194,157,.18); }
+body.skin-nilo .companion-card.tortuga h3:after { content:" · EXPLORADOR"; font-size:9px; }
+.perfil-avatar.marco-dorado { outline:3px solid #f4bd45; outline-offset:3px; box-shadow:0 0 16px rgba(244,189,69,.45); }
+.perfil-titulo { display:block; color:var(--gold); font-weight:700; margin:2px 0 4px; }
 body.tema-claro .desafio-enunciado { color: #fff; }
 body.tema-claro .diario-enunciado { color: #fff; }
 body.tema-claro .diario-premio { color: #29451f; font-weight: 700; }

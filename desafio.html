@@ -111,14 +111,20 @@
                 else if (x === b) x.classList.add("incorrecta");
               });
               completarReto(id, ok, 20, nivel);
+              if (!ok) {
+                const estadoRepaso = leerEstado(), cola = estadoRepaso.repasos || {};
+                cola[id] = [...(cola[id] || []), {kind:"choice", prompt:reto.pregunta, options:reto.opciones, answer:reto.correcta, why:reto.explicacion, review:true}];
+                estadoRepaso.repasos = cola;
+                guardarEstado(estadoRepaso);
+              }
               setTimeout(() => {
                 pregunta.classList.add("oculto");
                 resultado.classList.remove("oculto");
                 resTitulo.textContent = ok ? "¡CORRECTO!" : "SIGUE INTENTANDO";
                 resTitulo.style.color = ok ? "#83e55a" : "#ff7169";
                 resTexto.textContent = ok
-                  ? "Muy bien, encontraste la respuesta."
-                  : "Cada intento entrena tu mente.";
+                  ? "Muy bien, encontraste la respuesta. +5 monedas."
+                  : `La respuesta correcta era «${reto.opciones[reto.correcta]}». ${reto.explicacion}`;
                 resXp.textContent = ok ? "+ 20 XP" : "SIN XP ESTA VEZ";
                 resRacha.textContent = `RACHA ${leerEstado().racha} DÍAS 🔥`;
                 expTexto.textContent = reto.explicacion;
@@ -127,11 +133,18 @@
             }),
         );
         if (id === 3) iniciarJuegoMemoria();
-        pista.onclick = () => alert(reto.explicacion.split(".")[0] + ".");
-        eliminar.onclick = () =>
-          document.querySelectorAll(".opcion-btn").forEach((b, i) => {
-            if (i !== reto.correcta && i % 2 === 0) b.style.opacity = ".25";
-          });
+        pista.onclick = () => {
+          const teniaPista=(leerEstado().inventario?.pista||0)>0;
+          if(teniaPista)usarPotenciador('pista');
+          alert(`${teniaPista?'Potenciador utilizado. ':''}${reto.explicacion.split(".")[0]}.`);
+        };
+        eliminar.onclick = () => {
+          const teniaPista=(leerEstado().inventario?.pista||0)>0;
+          if(teniaPista)usarPotenciador('pista');
+          const ocultar=[...document.querySelectorAll(".opcion-btn")].filter((b,i)=>i!==reto.correcta&&i%2===0);
+          ocultar.forEach(b=>b.style.opacity=".25");
+          if(teniaPista)eliminar.innerHTML='✓<br />Pista utilizada';
+        };
         verExp.onclick = () => {
           resultado.classList.add("oculto");
           explicacion.classList.remove("oculto");
@@ -145,7 +158,9 @@
             ["🚀", "🪐", "⭐", "☄️", "🌍"],
             ["🎯", "♟️", "🎲", "🧩", "🏆"],
           ];
-          const imagenes = colecciones[(nivel - 1) % colecciones.length],
+          const bancoImagenes = [...new Set(colecciones.flat())];
+          const cantidadParejas = Math.min(8, 3 + Math.floor((nivel - 1) / 4));
+          const imagenes = bancoImagenes.sort(() => Math.random() - .5).slice(0, cantidadParejas),
             cartas = [...imagenes, ...imagenes].map((imagen, i) => ({
               imagen,
               id: i,
@@ -156,7 +171,7 @@
           }
           titulo.textContent = `DESAFÍO: MEMORIA · NIVEL ${nivel}`;
           enunciado.textContent =
-            "Encuentra las cinco parejas de imágenes. Recuerda dónde está cada una.";
+            `Encuentra ${cantidadParejas} parejas. La cantidad aumenta conforme avanzas de nivel.`;
           panelMemoria.classList.remove("oculto");
           ayudas.classList.add("oculto");
           tableroMemoria.innerHTML = cartas
@@ -191,7 +206,7 @@
                   primera = null;
                   encontradas++;
                   parejas.textContent = encontradas;
-                  if (encontradas === 5)
+                  if (encontradas === cantidadParejas)
                     setTimeout(() => terminarMemoria(movs), 500);
                 } else {
                   const actualizado = perderVida();
@@ -213,7 +228,7 @@
           pregunta.classList.add("oculto");
           resultado.classList.remove("oculto");
           resTitulo.textContent = "¡MEMORIA COMPLETADA!";
-          resTexto.textContent = `Encontraste las 5 parejas en ${movs} movimientos.`;
+          resTexto.textContent = `Encontraste ${cantidadParejas} parejas en ${movs} movimientos. +5 monedas.`;
           resXp.textContent = "+ 30 XP";
           resRacha.textContent = `RACHA ${nuevo.racha} DÍAS 🔥`;
           expTexto.textContent =

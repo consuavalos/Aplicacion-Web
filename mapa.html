@@ -5,6 +5,7 @@
 <main class="pantalla mapa">
   <header class="encabezado"><a href="modos.html">‹</a><h2>MAPA DE DESAFÍOS</h2></header>
   <p class="subtitulo" id="nombreHabilidad">Tu aventura mental</p>
+  <a id="abrirActividades" class="btn btn-primario enlace-actividades" href="actividades.html">✦ Explorar actividades interactivas</a>
   <section class="nodos" id="nodos"></section>
   <div class="paginacion-mapa">
     <a id="paginaAnterior" class="flecha-pagina izquierda" aria-label="Página anterior">‹</a>
@@ -22,6 +23,7 @@ if(exigirUsuario()){
   const actual=Math.min(20,(estado.niveles&&estado.niveles[habilidad])||Math.floor((estado.progreso[habilidad]||0)/10)+1);
   const hab=HABILIDADES.find(h=>h.id===habilidad);
   nombreHabilidad.textContent=hab?hab.nombre:'Tu aventura mental';
+  abrirActividades.href=`actividades.html?habilidad=${habilidad}`;
 
   const inicio=(pagina-1)*8+1;
   const fin=Math.min(20,inicio+7);

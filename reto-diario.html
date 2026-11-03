@@ -13,8 +13,8 @@ if(exigirUsuario()){
   if(respondido)return;respondido=true;const ok=+b.dataset.i===reto.correcta;
   document.querySelectorAll('.opcion-btn').forEach((x,i)=>{x.disabled=true;if(i===reto.correcta)x.classList.add('correcta');else if(x===b)x.classList.add('incorrecta')});
   const yaCompletado=estado.ultimoRetoDiario===hoy;
-  if(ok&&!yaCompletado){estado.ultimoRetoDiario=hoy;estado.completados++;estado.correctos++;estado.xp+=reto.xp;if(estado.xp>=estado.meta){estado.xp-=estado.meta;estado.nivel++;estado.meta=Math.round(estado.meta*1.25);estado.logros++}guardarEstado(estado)}
-  setTimeout(()=>{diarioPregunta.classList.add('oculto');diarioResultado.classList.remove('oculto');diarioResTitulo.textContent=ok?'¡RETO DIARIO SUPERADO!':'RESPUESTA INCORRECTA';diarioResTitulo.style.color=ok?'#83e55a':'#ff7169';diarioResTexto.textContent=ok?'Resolviste el desafío avanzado de hoy.':'Analiza la estrategia y vuelve mañana para un nuevo desafío.';diarioResXp.textContent=ok?(yaCompletado?'Completado hoy':`+ ${reto.xp} XP`):'Sin recompensa';diarioExplicacion.textContent=reto.explicacion},450);
+  if(ok&&!yaCompletado){estado.ultimoRetoDiario=hoy;estado.completados++;estado.correctos++;estado.monedas=(estado.monedas||0)+20;estado.xp+=reto.xp;if(estado.xp>=estado.meta){estado.xp-=estado.meta;estado.nivel++;estado.meta=Math.round(estado.meta*1.25);estado.logros++}guardarEstado(estado)}
+  setTimeout(()=>{diarioPregunta.classList.add('oculto');diarioResultado.classList.remove('oculto');diarioResTitulo.textContent=ok?'¡RETO DIARIO SUPERADO!':'RESPUESTA INCORRECTA';diarioResTitulo.style.color=ok?'#83e55a':'#ff7169';diarioResTexto.textContent=ok?(yaCompletado?'Resolviste el reto de hoy.':'Resolviste el reto y ganaste 20 monedas.'):'Analiza la estrategia y vuelve mañana para un nuevo desafío.';diarioResXp.textContent=ok?(yaCompletado?'Completado hoy':`+ ${reto.xp} XP`):'Sin recompensa';diarioExplicacion.textContent=reto.explicacion},450);
  });
  document.body.insertAdjacentHTML('beforeend',navInferior('inicio'));
 }

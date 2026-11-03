@@ -105,7 +105,18 @@ function obtenerReto(habilidad,nivel){
    '7-4':{p:['El robot debe llegar a la estrella evitando el muro. ¿Qué ruta sirve?',['→ → ↑ ↑','↑ → → ↑','↑ ↑ → →','→ ↑ ↑ ←'],1,'La segunda ruta rodea el muro y termina en la estrella.'],visual:'🤖　⬜　🧱<br>⬜　⬜　🧱<br>🧱　⬜　⭐'}
   };
   const especial=especiales[`${habilidad}-${nivel}`];
-  let p=especial?especial.p:pruebas[nivel-1];
+  const mostrarEspecial=Boolean(especial)&&Math.random()<.35;
+  // Los nodos conservan su dificultad, pero el reto rota entre preguntas para
+  // que volver a jugar un nivel no muestre siempre el mismo enunciado.
+  let p=mostrarEspecial?especial.p:null;
+  if(!p && nivel<=8){
+    const clave=`enigma_ultima_prueba_${habilidad}`;
+    let anterior=-1;try{anterior=+(localStorage.getItem(clave)??-1)}catch{}
+    const candidatas=pruebas.map((_,i)=>i).filter(i=>i!==anterior);
+    const elegida=candidatas[Math.floor(Math.random()*candidatas.length)]??0;
+    try{localStorage.setItem(clave,String(elegida))}catch{}
+    p=pruebas[elegida];
+  }
   if(!p){
     if(habilidad===2){
       const inicio=nivel+1, salto=Math.ceil(nivel/4), serie=Array.from({length:4},(_,i)=>inicio+i*salto),respuesta=inicio+4*salto;
@@ -114,17 +125,24 @@ function obtenerReto(habilidad,nivel){
       const a=nivel+4,b=(nivel%6)+3,respuesta=a*b;
       p=[`¿Cuánto es ${a} × ${b}?`,[respuesta-b,respuesta+2,respuesta,respuesta+b].map(String),2,`${a} multiplicado por ${b} es ${respuesta}.`];
     }else{
-      const base=pruebas[(nivel-1)%pruebas.length];
-      p=[`${base[0]} (Reto avanzado ${nivel})`,[...base[1]],base[2],base[3]];
+      const base=pruebas[Math.floor(Math.random()*pruebas.length)];
+      p=[`${base[0]} · nivel ${nivel}`,[...base[1]],base[2],base[3]];
     }
   }
   const secuencia=habilidad===2?(p[0].match(/\d+/g)||[]).slice(0,4).concat('?'):null;
-  return {titulo:`DESAFÍO: ${h.nombre.toUpperCase()} · NIVEL ${nivel}`,pregunta:p[0],opciones:p[1],correcta:p[2],explicacion:p[3],estrategia:`Nivel ${nivel}: ${h.nombre}`,secuencia,visual:especial?.visual||null};
+  return {titulo:`DESAFÍO: ${h.nombre.toUpperCase()} · NIVEL ${nivel}`,pregunta:p[0],opciones:p[1],correcta:p[2],explicacion:p[3],estrategia:`Nivel ${nivel}: ${h.nombre}`,secuencia,visual:mostrarEspecial?especial.visual:null};
 }
 
 function leerEstado(){
-  const base={nivel:1,xp:0,meta:500,racha:0,logros:0,completados:0,correctos:0,vidas:5,niveles:{},progreso:{1:0,2:0,3:0,4:0,5:0,6:0,7:0}};
-  try{const e={...base,...JSON.parse(localStorage.getItem(claveEstadoJugador())||'{}')};const ahora=Date.now();if(e.sistemaVidasVersion!==2){e.vidas=5;e.sistemaVidasVersion=2;delete e.proximaRecargaVidas;guardarEstado(e)}else if(e.vidas<=0&&e.proximaRecargaVidas&&ahora>=e.proximaRecargaVidas){e.vidas=5;delete e.proximaRecargaVidas;guardarEstado(e)}return e}catch{return base}
+  const base={nivel:1,xp:0,meta:500,racha:0,logros:0,completados:0,correctos:0,vidas:5,vidasMaximas:5,monedas:0,niveles:{},progreso:{1:0,2:0,3:0,4:0,5:0,6:0,7:0},inventario:{},cosmeticos:[],equipado:{},repasos:{}};
+  try{
+    const e={...base,...JSON.parse(localStorage.getItem(claveEstadoJugador())||'{}')},ahora=Date.now();
+    e.vidasMaximas=5;e.vidas=Math.max(0,Math.min(5,Number(e.vidas)||0));e.inventario=e.inventario||{};e.cosmeticos=e.cosmeticos||[];e.equipado=e.equipado||{};
+    if(e.sistemaVidasVersion!==3){e.ultimaRecargaVida=e.vidas<5?(e.proximaRecargaVidas||ahora+30*60*1000):null;e.sistemaVidasVersion=3;delete e.proximaRecargaVidas}
+    if(e.vidas<5){let siguiente=e.ultimaRecargaVida||ahora+30*60*1000;if(ahora>=siguiente){const recuperadas=1+Math.floor((ahora-siguiente)/(30*60*1000));e.vidas=Math.min(5,e.vidas+recuperadas);siguiente+=recuperadas*30*60*1000}e.ultimaRecargaVida=e.vidas<5?siguiente:null}else e.ultimaRecargaVida=null;
+    if(e.xpDobleHasta&&ahora>=e.xpDobleHasta)delete e.xpDobleHasta;
+    guardarEstado(e);return e
+  }catch{return base}
 }
 function claveEstadoJugador(){
   const usuario=usuarioInvitado();
@@ -137,17 +155,49 @@ function registrarIngresoDiario(){
   const e=leerEstado(),hoy=new Date(),fechaHoy=[hoy.getFullYear(),hoy.getMonth()+1,hoy.getDate()].join('-');
   if(e.ultimoIngreso===fechaHoy)return;
   const ayer=new Date(hoy);ayer.setDate(ayer.getDate()-1);const fechaAyer=[ayer.getFullYear(),ayer.getMonth()+1,ayer.getDate()].join('-');
-  e.racha=e.ultimoIngreso===fechaAyer?(e.racha||0)+1:1;e.ultimoIngreso=fechaHoy;guardarEstado(e);
+  const diasDesdeUltimo=e.ultimoIngreso?Math.floor((new Date(fechaHoy)-new Date(e.ultimoIngreso))/86400000):0;
+  if(e.ultimoIngreso===fechaAyer)e.racha=(e.racha||0)+1;
+  else if(diasDesdeUltimo===2&&e.protectoresRacha>0){e.protectoresRacha--;e.racha=(e.racha||0)+1}
+  else e.racha=1;
+  e.ultimoIngreso=fechaHoy;guardarEstado(e);
 }
 registrarIngresoDiario();
 function usuarioInvitado(){try{return JSON.parse(localStorage.getItem('enigma_invitado')||'null')}catch{return null}}
 async function obtenerUsuarioActual(){return usuarioInvitado()}
 async function obtenerPerfil(){const u=usuarioInvitado(),e=leerEstado();return {data:u?{id:u.id,nombre:u.nombre,nivel:e.nivel,xp:e.xp,xp_siguiente_nivel:e.meta,racha:e.racha,logros:e.logros}:null,error:null}}
 async function cerrarSesion(){localStorage.removeItem('enigma_invitado')}
-function perderVida(e=leerEstado()){e.vidas=Math.max(0,e.vidas-1);if(e.vidas===0)e.proximaRecargaVidas=Date.now()+30*60*1000;guardarEstado(e);return e}
-function completarReto(habilidad,correcto,xp=20,nivelReto=1){
-  const e=leerEstado(); e.niveles=e.niveles||{}; e.completados++; if(correcto){e.correctos++;e.xp+=xp;e.progreso[habilidad]=Math.min(100,(e.progreso[habilidad]||0)+5);e.niveles[habilidad]=Math.max(e.niveles[habilidad]||1,Math.min(20,nivelReto+1));if(e.xp>=e.meta){e.xp-=e.meta;e.nivel++;e.meta=Math.round(e.meta*1.25);e.logros++}}else{perderVida(e)} guardarEstado(e); return e;
+function perderVida(e=leerEstado()){
+  e.inventario=e.inventario||{};
+  if((e.inventario.escudoVida||0)>0){e.inventario.escudoVida--;guardarEstado(e);return e}
+  e.vidas=Math.max(0,e.vidas-1);if(e.vidas<5&&!e.ultimaRecargaVida)e.ultimaRecargaVida=Date.now()+30*60*1000;guardarEstado(e);return e
 }
+function completarReto(habilidad,correcto,xp=20,nivelReto=1){
+  const e=leerEstado();e.niveles=e.niveles||{};e.inventario=e.inventario||{};e.completados++;
+  if(correcto){e.correctos++;e.monedas=(e.monedas||0)+5;let multiplicador=(e.xpDobleHasta>Date.now()?2:1);if(e.inventario.xpDoblePartida>0){multiplicador*=2;e.inventario.xpDoblePartida--}if(e.inventario.xpDoble30>0){e.inventario.xpDoble30--;e.xpDobleHasta=Date.now()+30*60*1000;multiplicador*=2}e.xp+=xp*multiplicador;e.progreso[habilidad]=Math.min(100,(e.progreso[habilidad]||0)+5);e.niveles[habilidad]=Math.max(e.niveles[habilidad]||1,Math.min(20,nivelReto+1));if(e.xp>=e.meta){e.xp-=e.meta;e.nivel++;e.meta=Math.round(e.meta*1.25);e.logros++}}
+  else perderVida(e);
+  guardarEstado(e);return e;
+}
+
+const TIENDA_ARTICULOS=[
+ {id:'pista',nombre:'Pista experta',tipo:'powerup',precio:35,icono:'💡',detalle:'Elimina una opción incorrecta o revela una pista.'},
+ {id:'tiempoExtra',nombre:'Tiempo extra',tipo:'powerup',precio:45,icono:'⏱️',detalle:'+10 segundos para una sesión.'},
+ {id:'saltarPregunta',nombre:'Salto seguro',tipo:'powerup',precio:50,icono:'⏭️',detalle:'Sáltate un reto sin perder una vida.'},
+ {id:'escudoVida',nombre:'Escudo de vida',tipo:'powerup',precio:70,icono:'🛡️',detalle:'Protege contra el próximo error.'},
+ {id:'xpDoblePartida',nombre:'Doble XP · una partida',tipo:'powerup',precio:90,icono:'✨',detalle:'Duplica el XP de tu siguiente reto completado.'},
+ {id:'xpDoble30',nombre:'Doble XP · 30 minutos',tipo:'powerup',precio:150,icono:'⏳',detalle:'Duplica el XP durante 30 minutos desde tu siguiente acierto.'},
+ {id:'protectorRacha',nombre:'Protector de racha',tipo:'powerup',precio:120,icono:'🔥',detalle:'Protege tu racha ante un día sin jugar.'},
+ {id:'skin-umbra',nombre:'Umbra nocturna',tipo:'cosmetic',categoria:'personaje',precio:180,icono:'🌑',detalle:'Aspecto alternativo para Umbra.'},
+ {id:'skin-nilo',nombre:'Nilo explorador',tipo:'cosmetic',categoria:'personaje',precio:180,icono:'🐢',detalle:'Aspecto aventurero para Nilo.'},
+ {id:'tema-oceano',nombre:'Tema océano',tipo:'cosmetic',categoria:'tema',precio:140,icono:'🌊',detalle:'Acentos visuales color océano.'},
+ {id:'marco-dorado',nombre:'Marco dorado',tipo:'cosmetic',categoria:'marco',precio:160,icono:'🖼️',detalle:'Un marco especial para tu avatar.'},
+ {id:'titulo-estratega',nombre:'Título: Estratega',tipo:'cosmetic',categoria:'titulo',precio:100,icono:'🏅',detalle:'Muestra tu título en el perfil.'},
+ {id:'pack-logica',nombre:'Lógica avanzada',tipo:'contenido',precio:250,icono:'🧩',detalle:'Desbloquea una colección de retos avanzados.'},
+ {id:'pack-temporada',nombre:'Colección de temporada',tipo:'contenido',precio:220,icono:'🎃',detalle:'Retos y recompensas de temporada.'},
+ {id:'modo-experto',nombre:'Modo experto',tipo:'contenido',precio:300,icono:'⚡',detalle:'Activa sesiones con límite de tiempo más exigente.'}
+];
+function articuloOfertaDiaria(){const hoy=new Date(),semilla=Math.floor(Date.UTC(hoy.getFullYear(),hoy.getMonth(),hoy.getDate())/86400000);const elegibles=TIENDA_ARTICULOS.filter(a=>a.tipo!=='contenido'||a.id!=='modo-experto');return {...elegibles[semilla%elegibles.length],oferta:true,precioOferta:Math.max(10,Math.floor(elegibles[semilla%elegibles.length].precio*.75)),fecha:[hoy.getFullYear(),hoy.getMonth()+1,hoy.getDate()].join('-')}}
+function comprarArticulo(id,precio){const e=leerEstado(),a=TIENDA_ARTICULOS.find(x=>x.id===id);if(!a)return {ok:false,mensaje:'Artículo no encontrado.'};if(a.tipo==='cosmetic'&&e.cosmeticos.includes(id))return {ok:false,mensaje:'Ya tienes este artículo.'};if(a.tipo==='contenido'&&(e.contenidoDesbloqueado||[]).includes(id))return {ok:false,mensaje:'Ya desbloqueaste este contenido.'};if(e.monedas<precio)return {ok:false,mensaje:'Aún no tienes suficientes monedas.'};e.monedas-=precio;if(a.tipo==='powerup'){if(id==='xpDoble30')e.inventario[id]=(e.inventario[id]||0)+1;else e.inventario[id]=(e.inventario[id]||0)+1;if(id==='protectorRacha')e.protectoresRacha=(e.protectoresRacha||0)+1}else if(a.tipo==='cosmetic')e.cosmeticos.push(id);else{e.contenidoDesbloqueado=e.contenidoDesbloqueado||[];e.contenidoDesbloqueado.push(id)}guardarEstado(e);return {ok:true,mensaje:`¡${a.nombre} añadido!`,estado:e}}
+function usarPotenciador(id){const e=leerEstado();e.inventario=e.inventario||{};if(!(e.inventario[id]>0))return false;e.inventario[id]--;guardarEstado(e);return true}
 
 const RETOS_DIARIOS=[
  {titulo:'Ecuación visual',pregunta:'🍎 + 🍎 + 🍎 = 30\n🍎 + 🍌 + 🍌 = 18\n🍌 + 🍇 + 🍇 = 10\n¿Cuánto vale 🍎 + 🍌 × 🍇?',opciones:['26','24','22','20'],correcta:2,explicacion:'Manzana=10, banana=4 y uvas=3. Primero se multiplica: 10 + 4×3 = 22.',xp:60},
@@ -157,8 +207,14 @@ const RETOS_DIARIOS=[
  {titulo:'Planificación',pregunta:'Debes cruzar un puente con tiempos de 1, 2, 7 y 10 minutos. Solo cruzan dos y necesitan una lámpara. ¿Tiempo mínimo?',opciones:['17 min','19 min','21 min','24 min'],correcta:0,explicacion:'Cruzan 1-2, vuelve 1; cruzan 7-10, vuelve 2; cruzan 1-2: total 17.',xp:80}
 ];
 function retoDiarioActual(){const inicio=new Date(new Date().getFullYear(),0,0),dia=Math.floor((new Date()-inicio)/86400000);return RETOS_DIARIOS[dia%RETOS_DIARIOS.length]}
-function navInferior(activo){return `<nav class="nav-inferior"><a class="nav-item ${activo==='inicio'?'activo':''}" href="./index.html" onclick="location.assign('./index.html');return false"><b>⌂</b>Inicio</a><a class="nav-item" href="./mapa.html" onclick="location.assign('./mapa.html');return false"><b>▣</b>Misiones</a><a class="nav-item ${activo==='habilidades'?'activo':''}" href="./modos.html" onclick="location.assign('./modos.html');return false"><b>✤</b>Habilidades</a><a class="nav-item" href="#" onclick="return false"><b>🛒</b>Tienda</a><a class="nav-item ${activo==='perfil'?'activo':''}" href="./perfil.html" onclick="location.assign('./perfil.html');return false"><b>♟</b>Perfil</a></nav>`}
-function exigirUsuario(){if(!usuarioInvitado()){location.href='Login.html';return false}return true}
+function navInferior(activo){return `<nav class="nav-inferior"><a class="nav-item ${activo==='inicio'?'activo':''}" href="./index.html" onclick="location.assign('./index.html');return false"><b>⌂</b>Inicio</a><a class="nav-item" href="./mapa.html" onclick="location.assign('./mapa.html');return false"><b>▣</b>Misiones</a><a class="nav-item ${activo==='habilidades'?'activo':''}" href="./modos.html" onclick="location.assign('./modos.html');return false"><b>✤</b>Habilidades</a><a class="nav-item ${activo==='tienda'?'activo':''}" href="./tienda.html" onclick="location.assign('./tienda.html');return false"><b>🛒</b>Tienda</a><a class="nav-item ${activo==='perfil'?'activo':''}" href="./perfil.html" onclick="location.assign('./perfil.html');return false"><b>♟</b>Perfil</a></nav>`}
+function exigirUsuario(){if(!usuarioInvitado()){location.href='Login.html';return false}if(!location.pathname.toLowerCase().endsWith('evaluacion.html')&&!leerEstado().evaluacionCompleta){location.href='evaluacion.html';return false}return true}
+function aplicarCosmeticos(e=leerEstado()){
+  const eq=e.equipado||{};document.body.classList.toggle('tema-oceano',eq.tema==='tema-oceano');
+  document.body.classList.toggle('skin-umbra',eq.personaje==='skin-umbra');document.body.classList.toggle('skin-nilo',eq.personaje==='skin-nilo');
+  const avatar=document.getElementById('avatarPerfil');if(avatar)avatar.classList.toggle('marco-dorado',eq.marco==='marco-dorado');
+  const titulo=document.getElementById('tituloPerfil');if(titulo){const item=TIENDA_ARTICULOS.find(a=>a.id===eq.titulo);titulo.textContent=item?item.nombre.replace('Título: ',''):'Explorador mental'}
+}
 
 // ---------- Ajustes globales: idioma y sonido ----------
 const AJUSTES_BASE={idioma:'es',sonidos:true,musica:false,mezcla:'focus',volumen:35,tema:'oscuro'};
@@ -168,10 +224,10 @@ function aplicarTema(tema){document.body.classList.toggle('tema-claro',tema==='c
 
 const TRADUCCIONES={
  en:{
-  'Inicio':'Home','Misiones':'Missions','Habilidades':'Skills','Tienda':'Shop','Perfil':'Profile','Ajustes':'Settings','Cerrar':'Close','Idioma':'Language','Sonidos de teclas y botones':'Keyboard and button sounds','Música para concentrarse':'Focus music','Mezcla musical':'Music mix','Volumen':'Volume','Enfoque profundo':'Deep focus','Bosque tranquilo':'Quiet forest','Calma nocturna':'Night calm','Cerrar sesión':'Log out','RETO DEL DÍA':'DAILY CHALLENGE','MODOS DE ENTRENAMIENTO':'TRAINING MODES','Elige una habilidad para entrenar':'Choose a skill to train','MAPA DE DESAFÍOS':'CHALLENGE MAP','Tu aventura mental':'Your mental adventure','MI PERFIL':'MY PROFILE','ESTADÍSTICAS GENERALES':'GENERAL STATISTICS','FORTALEZAS':'STRENGTHS','CONTINUAR':'CONTINUE','VER EXPLICACIÓN':'VIEW EXPLANATION','EXPLICACIÓN':'EXPLANATION','ESTRATEGIA APRENDIDA':'LEARNED STRATEGY','Pista':'Hint','Eliminar 2 opciones':'Remove 2 options','Encuentra las cinco parejas de imágenes. Recuerda dónde está cada una.':'Find the five image pairs. Remember where each one is.'
+  'Inicio':'Home','Misiones':'Missions','Habilidades':'Skills','Tienda':'Shop','Perfil':'Profile','Ajustes':'Settings','Cerrar':'Close','Idioma':'Language','Sonidos de teclas y botones':'Keyboard and button sounds','Música para concentrarse':'Focus music','Mezcla musical':'Music mix','Volumen':'Volume','Enfoque profundo':'Deep focus','Bosque tranquilo':'Quiet forest','Calma nocturna':'Night calm','Cerrar sesión':'Log out','RETO DEL DÍA':'DAILY CHALLENGE','MODOS DE ENTRENAMIENTO':'TRAINING MODES','Elige una habilidad para entrenar':'Choose a skill to train','MAPA DE DESAFÍOS':'CHALLENGE MAP','Tu aventura mental':'Your mental adventure','MI PERFIL':'MY PROFILE','ESTADÍSTICAS GENERALES':'GENERAL STATISTICS','FORTALEZAS':'STRENGTHS','CONTINUAR':'CONTINUE','VER EXPLICACIÓN':'VIEW EXPLANATION','EXPLICACIÓN':'EXPLANATION','ESTRATEGIA APRENDIDA':'LEARNED STRATEGY','Pista':'Hint','Eliminar 2 opciones':'Remove 2 options','Encuentra las parejas. La cantidad aumenta conforme avanzas de nivel.':'Find the pairs. The number increases as you advance.'
  },
  pt:{
-  'Inicio':'Início','Misiones':'Missões','Habilidades':'Habilidades','Tienda':'Loja','Perfil':'Perfil','Ajustes':'Configurações','Cerrar':'Fechar','Idioma':'Idioma','Sonidos de teclas y botones':'Sons de teclas e botões','Música para concentrarse':'Música para concentração','Mezcla musical':'Mix musical','Volumen':'Volume','Enfoque profundo':'Foco profundo','Bosque tranquilo':'Floresta tranquila','Calma nocturna':'Calma noturna','Cerrar sesión':'Sair','RETO DEL DÍA':'DESAFIO DO DIA','MODOS DE ENTRENAMIENTO':'MODOS DE TREINAMENTO','Elige una habilidad para entrenar':'Escolha uma habilidade para treinar','MAPA DE DESAFÍOS':'MAPA DE DESAFIOS','Tu aventura mental':'Sua aventura mental','MI PERFIL':'MEU PERFIL','ESTADÍSTICAS GENERALES':'ESTATÍSTICAS GERAIS','FORTALEZAS':'PONTOS FORTES','CONTINUAR':'CONTINUAR','VER EXPLICACIÓN':'VER EXPLICAÇÃO','EXPLICACIÓN':'EXPLICAÇÃO','ESTRATEGIA APRENDIDA':'ESTRATÉGIA APRENDIDA','Pista':'Dica','Eliminar 2 opciones':'Eliminar 2 opções','Encuentra las cinco parejas de imágenes. Recuerda dónde está cada una.':'Encontre os cinco pares de imagens. Lembre-se de onde cada um está.'
+  'Inicio':'Início','Misiones':'Missões','Habilidades':'Habilidades','Tienda':'Loja','Perfil':'Perfil','Ajustes':'Configurações','Cerrar':'Fechar','Idioma':'Idioma','Sonidos de teclas y botones':'Sons de teclas e botões','Música para concentrarse':'Música para concentração','Mezcla musical':'Mix musical','Volumen':'Volume','Enfoque profundo':'Foco profundo','Bosque tranquilo':'Floresta tranquila','Calma nocturna':'Calma noturna','Cerrar sesión':'Sair','RETO DEL DÍA':'DESAFIO DO DIA','MODOS DE ENTRENAMIENTO':'MODOS DE TREINAMENTO','Elige una habilidad para entrenar':'Escolha uma habilidade para treinar','MAPA DE DESAFÍOS':'MAPA DE DESAFIOS','Tu aventura mental':'Sua aventura mental','MI PERFIL':'MEU PERFIL','ESTADÍSTICAS GENERALES':'ESTATÍSTICAS GERAIS','FORTALEZAS':'PONTOS FORTES','CONTINUAR':'CONTINUAR','VER EXPLICACIÓN':'VER EXPLICAÇÃO','EXPLICACIÓN':'EXPLICAÇÃO','ESTRATEGIA APRENDIDA':'ESTRATÉGIA APRENDIDA','Pista':'Dica','Eliminar 2 opções':'Eliminar 2 opções','Encuentra las parejas. La cantidad aumenta conforme avanzas de nivel.':'Encontre os pares. A quantidade aumenta conforme você avança.'
  }
 };
 function aplicarIdioma(idioma){
@@ -199,7 +255,7 @@ function iniciarMusica(){
 function montarAjustes(){
  if(!usuarioInvitado()||location.pathname.toLowerCase().endsWith('login.html'))return;
  registrarIngresoDiario();
- const a=leerAjustes();aplicarTema(a.tema);document.body.insertAdjacentHTML('beforeend',`<button id="cambiarTema" class="btn-tema" type="button" aria-label="Cambiar a tema claro" title="Cambiar tema">☀</button><button id="abrirAjustes" class="btn-ajustes" aria-label="Ajustes">⚙</button><div id="modalAjustes" class="modal-ajustes oculto"><div class="ajustes-panel"><div class="ajustes-cabecera"><h2>Ajustes</h2><button id="cerrarAjustes" aria-label="Cerrar">×</button></div><label>Idioma<select id="ajusteIdioma"><option value="es">Español</option><option value="en">English</option><option value="pt">Português</option></select></label><label class="ajuste-switch"><span>Sonidos de teclas y botones</span><input id="ajusteSonidos" type="checkbox"></label><label class="ajuste-switch"><span>Música para concentrarse</span><input id="ajusteMusica" type="checkbox"></label><label>Mezcla musical<select id="ajusteMezcla"><option value="focus">Enfoque profundo</option><option value="forest">Bosque tranquilo</option><option value="calm">Calma nocturna</option></select></label><label>Volumen <output id="valorVolumen">${a.volumen}%</output><input id="ajusteVolumen" type="range" min="0" max="100" value="${a.volumen}"></label><button id="probarMusica" class="btn-probar-musica" type="button">Probar música</button><p class="nota-audio">Mezcla instrumental generada para acompañar sesiones de concentración.</p></div></div>`);
+ const a=leerAjustes();aplicarTema(a.tema);aplicarCosmeticos();document.body.insertAdjacentHTML('beforeend',`<button id="cambiarTema" class="btn-tema" type="button" aria-label="Cambiar a tema claro" title="Cambiar tema">☀</button><button id="abrirAjustes" class="btn-ajustes" aria-label="Ajustes">⚙</button><div id="modalAjustes" class="modal-ajustes oculto"><div class="ajustes-panel"><div class="ajustes-cabecera"><h2>Ajustes</h2><button id="cerrarAjustes" aria-label="Cerrar">×</button></div><label>Idioma<select id="ajusteIdioma"><option value="es">Español</option><option value="en">English</option><option value="pt">Português</option></select></label><label class="ajuste-switch"><span>Sonidos de teclas y botones</span><input id="ajusteSonidos" type="checkbox"></label><label class="ajuste-switch"><span>Música para concentrarse</span><input id="ajusteMusica" type="checkbox"></label><label>Mezcla musical<select id="ajusteMezcla"><option value="focus">Enfoque profundo</option><option value="forest">Bosque tranquilo</option><option value="calm">Calma nocturna</option></select></label><label>Volumen <output id="valorVolumen">${a.volumen}%</output><input id="ajusteVolumen" type="range" min="0" max="100" value="${a.volumen}"></label><button id="probarMusica" class="btn-probar-musica" type="button">Probar música</button><p class="nota-audio">Mezcla instrumental generada para acompañar sesiones de concentración.</p></div></div>`);
  ajusteIdioma.value=a.idioma;ajusteSonidos.checked=a.sonidos;ajusteMusica.checked=a.musica;ajusteMezcla.value=a.mezcla;
  const actualizarBotonTema=()=>{const claro=leerAjustes().tema==='claro';cambiarTema.textContent=claro?'☾':'☀';cambiarTema.setAttribute('aria-label',claro?'Cambiar a tema oscuro':'Cambiar a tema claro')};actualizarBotonTema();
  cambiarTema.onclick=()=>{const nuevo={...leerAjustes(),tema:leerAjustes().tema==='claro'?'oscuro':'claro'};guardarAjustes(nuevo);aplicarTema(nuevo.tema);actualizarBotonTema()};

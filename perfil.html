@@ -24,6 +24,7 @@
         </div>
         <div>
           <h2 id="nombre"></h2>
+          <small id="tituloPerfil" class="perfil-titulo"></small>
           <div class="nivel-tag">Nivel <span id="nivel"></span></div>
           <div class="barra-xp-fondo">
             <div class="barra-xp-relleno" id="barra"></div>
@@ -60,6 +61,7 @@
         const u = usuarioInvitado(),
           e = leerEstado();
         nombre.textContent = u.nombre;
+        aplicarCosmeticos(e);
         if (e.avatar) avatarPerfil.style.backgroundImage = `url(${e.avatar})`;
         nivel.textContent = e.nivel;
         xp.textContent = `${e.xp} / ${e.meta} XP`;
